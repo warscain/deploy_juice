@@ -2,11 +2,9 @@
 #coding=utf-8
 #
 
-
 import ConfigParser
 import os
 import platform
-
 
 
 # Linux OS selection list
@@ -60,7 +58,7 @@ def DeployCreate(dplname, osver, dplloc, dpldep=None):
         # Cfg_FH = open(Dpl_FileLoc, 'w')
         Dpl_CFGHD = ConfigParser.ConfigParser()
         Dpl_CFGHD.add_section(dplname)
-        Dpl_CFGHD.
-
+        Dpl_CFGHD.set(dplname,'dependance', dpldep)
+        Dpl_CFGHD.items(dplname)
 
 
