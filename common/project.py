@@ -60,7 +60,7 @@ def DeployCreate(dplname, osver, dplloc, dpldep=None):
         # Cfg_FH = open(Dpl_FileLoc, 'w')
         Dpl_CFGHD = ConfigParser.ConfigParser()
         Dpl_CFGHD.add_section(dplname)
-        Dpl_CFGHD.it
+        Dpl_CFGHD.
 
 
 
