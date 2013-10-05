@@ -30,49 +30,62 @@ class DeployPrj(object):
             return PlatForm_Cur
 
     def _List2string(self, list):
-        count = 0
-        num = len(list)
-        final = ''
-        for item in list:
-            count += 1
-            if count < num:
-                final += item + '-'
-            else:
-                final += item
-        return final
+        if list:
+            count = 0
+            num = len(list)
+            final = ''
+            for item in list:
+                count += 1
+                if count < num:
+                    final += str(item) + ', '
+                else:
+                    final += str(item)
+            return final
+        else:
+            return None
+
+    def _FilesExist(self, Files):
+        for File in Files:
+            if not os.path.exists(File):
+                return False
+        return True
 
     def _DeployCreate_Judge(self, dplname, osver, dplloc, dpldep=None):
         Dpl_CfgName = str(dplname) + '.dpl'
         Dpl_CfgLoc = self.Dpl_RootPath + os.sep + Dpl_CfgName
         self._Dpl_CfgLoc = Dpl_CfgLoc
-        Dpl_DepFileName = str(dpldep) + '.dpl'
-        Dpl_DepFileLoc = self.Dpl_RootPath + os.sep + Dpl_DepFileName
         Dpl_FilesLoc = dplloc
+
+        Dpl_DepFilesLoc = []
+        if dpldep:
+            for item in dpldep:
+                Dpl_DepFileName = str(item) + '.dpl'
+                Dpl_DepFileLoc = self.Dpl_RootPath + os.sep + Dpl_DepFileName
+                Dpl_DepFilesLoc.append(Dpl_DepFileLoc)
 
         if not os.path.exists(Dpl_CfgLoc):
             if self.PlatForm() in osver:
                 if not os.path.exists(Dpl_FilesLoc):
-                    if not dpldep:
-                        ## print 'nodep, you can create'
-                        return True
-                    elif os.path.exists(Dpl_DepFileLoc):
-                        ## print 'have dep , you can create'
-                        return True
+                    if dpldep:
+                        if self._FilesExist(Dpl_DepFilesLoc):
+                            print '''dep dpl exist can create.'''
+                            return True
+                        else:
+                            print '''some dep dpl not exist, can't create'''
                     else:
-                        print '''have dep, but not exist file, can't create'''
-                else: print '''dpl files location exist, can't create it'''
-            else: print '''Plat form not match'''
+                        print '''dep dpl is none, can create'''
+                        return True
+                else: print '''dpl files location exist, can't create'''
+            else: print '''Plat form not match, can't create'''
         else: print '''dpl config file exist, can't create'''
         return False
 
-
-
     def DeployCreate(self, dplname, osver, dplloc, dpldep=None):
-        if self._DeployCreate_Judge(dplname, osver, dplloc, dpldep=None):
+        if self._DeployCreate_Judge(dplname, osver, dplloc, dpldep):
             Dpl_CfgHD = ConfigParser.ConfigParser()
             Dpl_CfgHD.add_section(dplname)
-            Dpl_CfgHD.set(dplname,'dependence', dpldep)
-            Dpl_CfgHD.set(dplname,'osversion', osver)
+            Dpl_CfgHD.set(dplname,'dependence', self._List2string(dpldep))
+            Dpl_CfgHD.set(dplname,'osversion', self._List2string(osver))
             Dpl_CfgHD.set(dplname,'location', dplloc)
             Cfg_FHD = open(self._Dpl_CfgLoc, 'w')
             Dpl_CfgHD.write(Cfg_FHD)
