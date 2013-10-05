@@ -5,8 +5,8 @@
 import ConfigParser
 import os
 import platform
-import sys
 import shutil
+
 
 OSType = ['redhat', 'centos']
 OSVersion = ['5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9',
@@ -23,12 +23,23 @@ class DeployPrj(object):
         if SystemType == 'Linux':
             Arch_Cur = platform.machine()
             OSnVer_Cur = list(platform.dist()[0:2])
-            OSnVer_Cur.append(Arch_Cur)
-            PlatForm_Cur = OSnVer_Cur
+            PlatForm_Cur = OSnVer_Cur[0] + '-' + OSnVer_Cur[1] + '-' + Arch_Cur
             return PlatForm_Cur
         elif SystemType == 'Windows':
             PlatForm_Cur = platform.platform()
             return PlatForm_Cur
+
+    def _List2string(self, list):
+        count = 0
+        num = len(list)
+        final = ''
+        for item in list:
+            count += 1
+            if count < num:
+                final += item + '-'
+            else:
+                final += item
+        return final
 
     def _DeployCreate_Judge(self, dplname, osver, dplloc, dpldep=None):
         Dpl_CfgName = str(dplname) + '.dpl'
@@ -42,10 +53,10 @@ class DeployPrj(object):
             if self.PlatForm() in osver:
                 if not os.path.exists(Dpl_FilesLoc):
                     if not dpldep:
-                        # print 'nodep, you can create'
+                        ## print 'nodep, you can create'
                         return True
                     elif os.path.exists(Dpl_DepFileLoc):
-                        # print 'have dep , you can create'
+                        ## print 'have dep , you can create'
                         return True
                     else:
                         print '''have dep, but not exist file, can't create'''
@@ -54,33 +65,35 @@ class DeployPrj(object):
         else: print '''dpl config file exist, can't create'''
         return False
 
+
+
     def DeployCreate(self, dplname, osver, dplloc, dpldep=None):
         if self._DeployCreate_Judge(dplname, osver, dplloc, dpldep=None):
             Dpl_CfgHD = ConfigParser.ConfigParser()
             Dpl_CfgHD.add_section(dplname)
-            Dpl_CfgHD.set(dplname,'dependance', dpldep)
+            Dpl_CfgHD.set(dplname,'dependence', dpldep)
             Dpl_CfgHD.set(dplname,'osversion', osver)
             Dpl_CfgHD.set(dplname,'location', dplloc)
             Cfg_FHD = open(self._Dpl_CfgLoc, 'w')
             Dpl_CfgHD.write(Cfg_FHD)
             Cfg_FHD.close()
-            #create Dpl_FilesLoc
+            ## create Dpl_FilesLoc
             os.umask(0000)
             os.mkdir(dplloc, 0755)
             os.umask(0022)
             return True
 
     def DeployDelete(self, dplname):
-        #get deploy config file path
+        ## get deploy config file path
         Dpl_CfgLoc = self.Dpl_RootPath + os.sep + str(dplname) + '.dpl'
         if os.path.exists(Dpl_CfgLoc):
-            #get deploy files path
+            ## get deploy files path
             Dpl_CfgHD = ConfigParser.ConfigParser()
             Dpl_CfgHD.read(Dpl_CfgLoc)
             Dpl_FilesLoc = Dpl_CfgHD.get(str(dplname), 'location')
-            #remove config file
+            ## remove config file
             os.remove(Dpl_CfgLoc)
-            #remove other files
+            ## remove other files, only do if the path exist. so 'return' position is at this place.
             if os.path.exists(Dpl_FilesLoc):
                 shutil.rmtree(Dpl_FilesLoc)
             return True
@@ -89,10 +102,39 @@ class DeployPrj(object):
             return False
 
     def DeployList(self):
-        return os.listdir(self.Dpl_RootPath)
+        ReturnList = []
+        for f in os.listdir(self.Dpl_RootPath):
+            if f.endswith('.dpl'):
+               ReturnList.append(f.replace('.dpl','') )
+        return ReturnList
 
-    def DeployEdit(self):
+    def DeployEdit(self, dplname):
+        print '''This feature will coming soon.'''
         pass
+
+    def DeployRead(self, dplname):
+        ## define a return list
+        ReturnList = []
+        ## open dpl config handler
+        Dpl_CfgLoc = self.Dpl_RootPath + os.sep + str(dplname) + '.dpl'
+        Dpl_CfgHD = ConfigParser.ConfigParser()
+        Dpl_CfgHD.read(Dpl_CfgLoc)
+
+        ReturnList.append(str(dplname))
+        ReturnList.append(Dpl_CfgHD.get(str(dplname), 'dependence'))
+        ReturnList.append(Dpl_CfgHD.get(str(dplname), 'osversion'))
+        ReturnList.append(Dpl_CfgHD.get(str(dplname), 'location'))
+        ## write result to return list
+        # try:
+        #     ReturnList.append(str(dplname))
+        #     ReturnList.append(Dpl_CfgHD.get(str(dplname), 'dependence'))
+        #     ReturnList.append(Dpl_CfgHD.get(str(dplname), 'osversion'))
+        #     ReturnList.append(Dpl_CfgHD.get(str(dplname), 'location'))
+        # except ConfigParser.NoSectionError:
+        #     print '''No such deploy!'''
+        ## return
+        return ReturnList
+
 
 
 
