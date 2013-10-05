@@ -14,20 +14,10 @@ OSVersion = ['5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9
 OSArch = ['x86_64', 'i686']
 
 class DeployPrj(object):
+    ''''''
     def __init__(self):
         self.Prg_RootPath = os.getcwd()
         self.Dpl_RootPath = self.Prg_RootPath + os.sep + 'deploy'
-
-    def PlatForm(self):
-        SystemType = platform.system()
-        if SystemType == 'Linux':
-            Arch_Cur = platform.machine()
-            OSnVer_Cur = list(platform.dist()[0:2])
-            PlatForm_Cur = OSnVer_Cur[0] + '-' + OSnVer_Cur[1] + '-' + Arch_Cur
-            return PlatForm_Cur
-        elif SystemType == 'Windows':
-            PlatForm_Cur = platform.platform()
-            return PlatForm_Cur
 
     def _List2string(self, list):
         if list:
@@ -44,11 +34,27 @@ class DeployPrj(object):
         else:
             return None
 
-    def _FilesExist(self, Files):
-        for File in Files:
+    def _FilesExist(self, files):
+        for File in files:
             if not os.path.exists(File):
                 return False
         return True
+
+    def _MkDeepDir(self, dirloc, dirmod):
+        if not os.path.exists(dirloc):
+            self._MkDeepDir(os.path.dirname(dirloc), dirmod)
+            os.mkdir(dirloc, dirmod)
+
+    def _PlatForm(self):
+        SystemType = platform.system()
+        if SystemType == 'Linux':
+            Arch_Cur = platform.machine()
+            OSnVer_Cur = list(platform.dist()[0:2])
+            PlatForm_Cur = OSnVer_Cur[0] + '-' + OSnVer_Cur[1] + '-' + Arch_Cur
+            return PlatForm_Cur
+        elif SystemType == 'Windows':
+            PlatForm_Cur = platform.platform()
+            return PlatForm_Cur
 
     def _DeployCreate_Judge(self, dplname, osver, dplloc, dpldep=None):
         Dpl_CfgName = str(dplname) + '.dpl'
@@ -56,18 +62,18 @@ class DeployPrj(object):
         self._Dpl_CfgLoc = Dpl_CfgLoc
         Dpl_FilesLoc = dplloc
 
-        Dpl_DepFilesLoc = []
+        Dpl_DepFilesLoc_List = []
         if dpldep:
             for item in dpldep:
                 Dpl_DepFileName = str(item) + '.dpl'
                 Dpl_DepFileLoc = self.Dpl_RootPath + os.sep + Dpl_DepFileName
-                Dpl_DepFilesLoc.append(Dpl_DepFileLoc)
+                Dpl_DepFilesLoc_List.append(Dpl_DepFileLoc)
 
         if not os.path.exists(Dpl_CfgLoc):
-            if self.PlatForm() in osver:
+            if self._PlatForm() in osver:
                 if not os.path.exists(Dpl_FilesLoc):
                     if dpldep:
-                        if self._FilesExist(Dpl_DepFilesLoc):
+                        if self._FilesExist(Dpl_DepFilesLoc_List):
                             print '''dep dpl exist can create.'''
                             return True
                         else:
@@ -82,6 +88,7 @@ class DeployPrj(object):
 
     def DeployCreate(self, dplname, osver, dplloc, dpldep=None):
         if self._DeployCreate_Judge(dplname, osver, dplloc, dpldep):
+            ## create Dpl
             Dpl_CfgHD = ConfigParser.ConfigParser()
             Dpl_CfgHD.add_section(dplname)
             Dpl_CfgHD.set(dplname,'dependence', self._List2string(dpldep))
@@ -92,9 +99,11 @@ class DeployPrj(object):
             Cfg_FHD.close()
             ## create Dpl_FilesLoc
             os.umask(0000)
-            os.mkdir(dplloc, 0755)
+            self._MkDeepDir(dplloc, 0755)
             os.umask(0022)
             return True
+        else:
+            return False
 
     def DeployDelete(self, dplname):
         ## get deploy config file path
@@ -121,35 +130,27 @@ class DeployPrj(object):
                ReturnList.append(f.replace('.dpl','') )
         return ReturnList
 
-    def DeployEdit(self, dplname):
-        print '''This feature will coming soon.'''
-        pass
-
     def DeployRead(self, dplname):
         ## define a return list
         ReturnList = []
         ## open dpl config handler
         Dpl_CfgLoc = self.Dpl_RootPath + os.sep + str(dplname) + '.dpl'
-        Dpl_CfgHD = ConfigParser.ConfigParser()
-        Dpl_CfgHD.read(Dpl_CfgLoc)
+        if os.path.exists(Dpl_CfgLoc):
+            Dpl_CfgHD = ConfigParser.ConfigParser()
+            Dpl_CfgHD.read(Dpl_CfgLoc)
 
-        ReturnList.append(str(dplname))
-        ReturnList.append(Dpl_CfgHD.get(str(dplname), 'dependence'))
-        ReturnList.append(Dpl_CfgHD.get(str(dplname), 'osversion'))
-        ReturnList.append(Dpl_CfgHD.get(str(dplname), 'location'))
-        ## write result to return list
-        # try:
-        #     ReturnList.append(str(dplname))
-        #     ReturnList.append(Dpl_CfgHD.get(str(dplname), 'dependence'))
-        #     ReturnList.append(Dpl_CfgHD.get(str(dplname), 'osversion'))
-        #     ReturnList.append(Dpl_CfgHD.get(str(dplname), 'location'))
-        # except ConfigParser.NoSectionError:
-        #     print '''No such deploy!'''
-        ## return
-        return ReturnList
+            ReturnList.append(str(dplname))
+            ReturnList.append(Dpl_CfgHD.get(str(dplname), 'dependence'))
+            ReturnList.append(Dpl_CfgHD.get(str(dplname), 'osversion'))
+            ReturnList.append(Dpl_CfgHD.get(str(dplname), 'location'))
+            return ReturnList
+        else:
+            return False
 
+    def DeployEdit(self, dplname):
+        print '''This feature will coming soon.'''
+        pass
 
-
-
-
-
+    def DeployCheck(self, dplname):
+        print '''This feature will coming soon.'''
+        pass
