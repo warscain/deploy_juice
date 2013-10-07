@@ -8,10 +8,17 @@ import platform
 import shutil
 
 
-OSType = ['redhat', 'centos']
-OSVersion = ['5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9',
+RHELType = ['redhat', 'centos']
+RHELVersion = ['5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9',
              '6.0', '6.1', '6.2', '6.3', '6.4', '6.5']
-OSArch = ['x86_64', 'i686']
+RHELArch = ['x86_64', 'i686']
+RHELSupported = []
+for a in RHELType:
+    for b in RHELVersion:
+        for c in RHELArch:
+            print a + '-' + b + '-' + c
+            RHELSupported.append(a + '-' + b + '-' + c)
+
 
 class DeployPrj(object):
     ''''''
@@ -19,12 +26,12 @@ class DeployPrj(object):
         self.Prg_RootPath = os.getcwd()
         self.Dpl_RootPath = self.Prg_RootPath + os.sep + 'deploy'
 
-    def _List2string(self, list):
-        if list:
+    def _List2String(self, AList):
+        if AList:
             count = 0
-            num = len(list)
+            num = len(AList)
             final = ''
-            for item in list:
+            for item in AList:
                 count += 1
                 if count < num:
                     final += str(item) + ', '
@@ -33,6 +40,15 @@ class DeployPrj(object):
             return final
         else:
             return None
+
+    def _String2List(self, Astring):
+        final = Astring.split(',')
+        num = len(final)
+        count = 0
+        for item in final:
+            final[count] = item.strip()
+            count += 1
+        return final
 
     def _FilesExist(self, files):
         for File in files:
@@ -87,12 +103,16 @@ class DeployPrj(object):
         return False
 
     def DeployCreate(self, dplname, osver, dplloc, dpldep=None):
+        dplname = str(dplname)
+        osver = osver
+        dplloc = str(dplloc)
+        dpldep = dpldep
         if self._DeployCreate_Judge(dplname, osver, dplloc, dpldep):
             ## create Dpl
             Dpl_CfgHD = ConfigParser.ConfigParser()
             Dpl_CfgHD.add_section(dplname)
-            Dpl_CfgHD.set(dplname,'dependence', self._List2string(dpldep))
-            Dpl_CfgHD.set(dplname,'osversion', self._List2string(osver))
+            Dpl_CfgHD.set(dplname,'dependence', self._List2String(dpldep))
+            Dpl_CfgHD.set(dplname,'osversion', self._List2String(osver))
             Dpl_CfgHD.set(dplname,'location', dplloc)
             Cfg_FHD = open(self._Dpl_CfgLoc, 'w')
             Dpl_CfgHD.write(Cfg_FHD)
@@ -140,17 +160,19 @@ class DeployPrj(object):
             Dpl_CfgHD.read(Dpl_CfgLoc)
 
             ReturnList.append(str(dplname))
-            ReturnList.append(Dpl_CfgHD.get(str(dplname), 'dependence'))
-            ReturnList.append(Dpl_CfgHD.get(str(dplname), 'osversion'))
+            ReturnList.append(self._String2List(Dpl_CfgHD.get(str(dplname), 'dependence')))
+            ReturnList.append(self._String2List(Dpl_CfgHD.get(str(dplname), 'osversion')))
             ReturnList.append(Dpl_CfgHD.get(str(dplname), 'location'))
+
             return ReturnList
         else:
             return False
+
+    def DeployCheck(self, dplname):
+        print '''This feature will coming soon.'''
+        pass
 
     def DeployEdit(self, dplname):
         print '''This feature will coming soon.'''
         pass
 
-    def DeployCheck(self, dplname):
-        print '''This feature will coming soon.'''
-        pass
